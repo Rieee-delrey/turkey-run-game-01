@@ -69,7 +69,8 @@ export function createRenderer(canvas) {
   }
 
   function drawBuilding(scrollX, kind, baseX) {
-    const x = baseX - scrollX;
+    // Buildings recur down the road: wrap them so the farm never runs out.
+    const x = (((baseX - scrollX) % 1400) + 1400) % 1400 - 260;
     if (x < -260 || x > W + 40) return;
     if (kind === 'farmhouse') {
       ctx.fillStyle = '#f7ead0';

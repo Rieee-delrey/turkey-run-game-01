@@ -96,10 +96,35 @@ export function autopilot(state, skill, ovenSafePass) {
 }
 
 /**
+ * Step the world until the frame is lively — the turkey mid-jump over a
+ * hazard, or an oven with its flame lit in view — or the time runs out.
+ * Screenshots must show the game at its best, not an empty stretch of road.
+ */
+function livelyFrame(world, skill, seconds, wantFlame) {
+  const limit = seconds / STEP;
+  for (let i = 0; i < limit; i += 1) {
+    if (world.step(STEP, autopilot(world.state, skill, world.ovenSafePass), false)
+      & (EVENT_CAUGHT | EVENT_ESCAPED)) break;
+    const turkey = world.state.turkey;
+    let hazardNear = false;
+    let flameNear = false;
+    for (const item of world.state.obstacles) {
+      if (!item.active) continue;
+      const ahead = item.x - turkey.x;
+      if (ahead > -40 && ahead < 320) {
+        if (item.kind === KIND_FENCE || item.kind === KIND_PUMPKIN || item.kind === KIND_OVEN) hazardNear = true;
+        if (item.kind === KIND_OVEN && world.ovenFlameOn(item)) flameNear = true;
+      }
+    }
+    if (!turkey.onGround && hazardNear && (!wantFlame || flameNear)) return;
+    if (wantFlame && flameNear && hazardNear) return;
+  }
+}
+/**
  * Set `world` to the named scene and return the screen to draw over it and
  * the best score to show. start: the title over a live farmyard. play: a
- * mid-farmyard run. kitchen: a late-kitchen chase with the farmer on your
- * tail. end: the escape at the forest gate.
+ * mid-farmyard run, caught mid-jump. kitchen: a late-kitchen chase with
+ * the farmer on your tail and an oven lit. end: the escape at the forest gate.
  */
 export function stageShot(name, world) {
   world.reset();
@@ -113,6 +138,7 @@ export function stageShot(name, world) {
     for (let index = 0; index < PLAY_SECONDS / STEP; index += 1) {
       if (world.step(STEP, autopilot(world.state, 0.7, world.ovenSafePass), false) & (EVENT_CAUGHT | EVENT_ESCAPED)) break;
     }
+    livelyFrame(world, 0.7, 3, false);
     return { screen: SCREEN_PLAY, best: world.state.score };
   }
   if (name === 'kitchen') {
@@ -126,6 +152,7 @@ export function stageShot(name, world) {
     for (let i = 0; i < 12 / STEP; i += 1) {
       if (world.step(STEP, autopilot(world.state, 0.45, world.ovenSafePass), false) & (EVENT_CAUGHT | EVENT_ESCAPED)) break;
     }
+    livelyFrame(world, 0.45, 6, true);
     if (world.state.lives > 0 && world.state.farmer.gap > 0) {
       // The frame a real chase reaches: the farmer a wingbeat behind.
       world.state.farmer.gap = 95;
