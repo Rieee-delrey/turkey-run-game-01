@@ -217,16 +217,25 @@ export function createRenderer(canvas) {
     ctx.beginPath();
     ctx.arc(x + 63, bodyY - 2, 2.5, 0, Math.PI * 2);
     ctx.fill();
-    // Legs, pumping while it runs.
+    // Legs: pumping while it runs, tucked while it jumps.
     ctx.strokeStyle = '#f2a007';
     ctx.lineWidth = 4;
-    const legSwing = turkey.onGround ? Math.sin(turkey.runPhase) * 10 : 6;
-    ctx.beginPath();
-    ctx.moveTo(x + 24, bodyY + 48);
-    ctx.lineTo(x + 24 + legSwing, FIELD.groundY);
-    ctx.moveTo(x + 44, bodyY + 48);
-    ctx.lineTo(x + 44 - legSwing, FIELD.groundY);
-    ctx.stroke();
+    if (turkey.onGround) {
+      const legSwing = Math.sin(turkey.runPhase) * 10;
+      ctx.beginPath();
+      ctx.moveTo(x + 24, bodyY + 48);
+      ctx.lineTo(x + 24 + legSwing, FIELD.groundY);
+      ctx.moveTo(x + 44, bodyY + 48);
+      ctx.lineTo(x + 44 - legSwing, FIELD.groundY);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x + 24, bodyY + 48);
+      ctx.lineTo(x + 30, bodyY + 60);
+      ctx.moveTo(x + 44, bodyY + 48);
+      ctx.lineTo(x + 38, bodyY + 60);
+      ctx.stroke();
+    }
   }
 
   function drawFarmer(state) {

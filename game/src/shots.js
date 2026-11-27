@@ -108,16 +108,23 @@ function livelyFrame(world, skill, seconds, wantFlame) {
     const turkey = world.state.turkey;
     let hazardNear = false;
     let flameNear = false;
+    let anythingNear = false;
     for (const item of world.state.obstacles) {
       if (!item.active) continue;
       const ahead = item.x - turkey.x;
-      if (ahead > -40 && ahead < 320) {
-        if (item.kind === KIND_FENCE || item.kind === KIND_PUMPKIN || item.kind === KIND_OVEN) hazardNear = true;
-        if (item.kind === KIND_OVEN && world.ovenFlameOn(item)) flameNear = true;
+      if (ahead > -40 && ahead < 400) {
+        anythingNear = true;
+        if (ahead < 320) {
+          if (item.kind === KIND_FENCE || item.kind === KIND_PUMPKIN || item.kind === KIND_OVEN) hazardNear = true;
+          if (item.kind === KIND_OVEN && world.ovenFlameOn(item)) flameNear = true;
+        }
       }
     }
-    if (!turkey.onGround && hazardNear && (!wantFlame || flameNear)) return;
-    if (wantFlame && flameNear && hazardNear) return;
+    if (wantFlame) {
+      if (flameNear && (hazardNear || !turkey.onGround)) return;
+    } else if (!turkey.onGround && anythingNear) {
+      return;
+    }
   }
 }
 /**
@@ -138,7 +145,7 @@ export function stageShot(name, world) {
     for (let index = 0; index < PLAY_SECONDS / STEP; index += 1) {
       if (world.step(STEP, autopilot(world.state, 0.7, world.ovenSafePass), false) & (EVENT_CAUGHT | EVENT_ESCAPED)) break;
     }
-    livelyFrame(world, 0.7, 3, false);
+    livelyFrame(world, 0.7, 5, false);
     return { screen: SCREEN_PLAY, best: world.state.score };
   }
   if (name === 'kitchen') {
