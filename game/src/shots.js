@@ -2,7 +2,7 @@
 // the real rules forward from a fresh run, steered by an autopilot that looks
 // ahead for fences, knives and corn, so the frame is what a real game looks
 // like and the same seed always gives the same frame.
-import { FIELD, STEP } from './config.js';
+import { FIELD, STEP, TURKEY } from './config.js';
 import {
   EVENT_CAUGHT, EVENT_ESCAPED, KIND_CORN, KIND_FENCE, KIND_HAY, KIND_KNIFE, KIND_OVEN, KIND_PUMPKIN,
 } from './world.js';
@@ -106,6 +106,10 @@ function livelyFrame(world, skill, seconds, wantFlame) {
     if (world.step(STEP, autopilot(world.state, skill, world.ovenSafePass), false)
       & (EVENT_CAUGHT | EVENT_ESCAPED)) break;
     const turkey = world.state.turkey;
+    // Mid-jump, not just leaving the ground: the frame should catch the
+    // turkey high in its arc, not an inch off the dirt.
+    const midJump = !turkey.onGround
+      && turkey.y < FIELD.groundY - TURKEY.height - 60;
     let hazardNear = false;
     let flameNear = false;
     let anythingNear = false;
@@ -121,8 +125,8 @@ function livelyFrame(world, skill, seconds, wantFlame) {
       }
     }
     if (wantFlame) {
-      if (flameNear && (hazardNear || !turkey.onGround)) return;
-    } else if (!turkey.onGround && anythingNear) {
+      if (flameNear && (hazardNear || midJump)) return;
+    } else if (midJump && anythingNear) {
       return;
     }
   }
